@@ -14,10 +14,9 @@ import (
 )
 
 var (
-	input  = flag.String("i", "", "the input go file to parse")
-	output = flag.String("o", "", "the output csharp file to generate")
+	output = flag.String("o", "", "the output csharp file to generate (default to stdout)")
 
-	classname = flag.String("classname", "Constants", "the output csharp file to generate")
+	classname = flag.String("classname", "Constants", "the class name to use when generating the csharp file")
 )
 
 var csharpTemplate = template.Must(template.New("").
@@ -45,29 +44,42 @@ func typeOf(def gosharp.ConstDef) (string, error) {
 	}
 }
 
+func usage() {
+	fmt.Fprintf(os.Stderr, "Usage of gosharp:\n")
+	fmt.Fprintf(os.Stderr, "\tgosharp [flags] file_with_consts.go\n")
+	fmt.Fprintf(os.Stderr, "Flags:\n")
+	flag.PrintDefaults()
+}
+
 func main() {
 
+	flag.Usage = usage
 	flag.Parse()
 
-	if *input == "" || *output == "" {
-		panic("must provide input and output files via -i and -o")
+	args := flag.Args()
+
+	if len(args) != 1 {
+		flag.Usage()
+		os.Exit(2)
 	}
 
-	s, err := os.Stat(*input)
+	input := args[0]
+
+	s, err := os.Stat(input)
 	if err != nil {
 		panic(fmt.Sprintf("error while inspecting input: %s", err))
 	}
 
 	if s.IsDir() {
-		panic(fmt.Sprintf("%s is a directory, expected go source file", *input))
+		panic(fmt.Sprintf("%s is a directory, expected go source file", input))
 	}
 
-	f, err := os.Open(*input)
+	f, err := os.Open(input)
 	if err != nil {
 		panic(fmt.Sprintf("error while opening file: %s", err))
 	}
 
-	defs, err := gosharp.ExtractConstsReader(bufio.NewReader(f), path.Base(*input))
+	defs, err := gosharp.ExtractConstsReader(bufio.NewReader(f), path.Base(input))
 	if err != nil {
 		panic(fmt.Sprintf("error while parsing file, make sure it compiles before generating: %s", err))
 	}
