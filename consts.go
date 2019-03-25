@@ -4,16 +4,24 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"log"
+	"io"
 )
 
-func ExtractConsts(src string) ([]ConstDef, error) {
+func ExtractConstsString(src string) ([]ConstDef, error) {
+	return ExtractConsts(src, "")
+}
+
+func ExtractConstsReader(r io.Reader, filename string) ([]ConstDef, error) {
+	return ExtractConsts(r, filename)
+}
+
+func ExtractConsts(src interface{}, filename string) ([]ConstDef, error) {
 
 	fs := token.NewFileSet()
-	f, err := parser.ParseFile(fs, "", src, parser.AllErrors)
+	f, err := parser.ParseFile(fs, filename, src, parser.AllErrors)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	v := constLocator{
