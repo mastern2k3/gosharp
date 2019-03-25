@@ -2,6 +2,7 @@ package gosharp
 
 import (
 	"bufio"
+	"go/token"
 	"os"
 	"reflect"
 	"testing"
@@ -11,10 +12,14 @@ func TestExtractConstsString(t *testing.T) {
 
 	expected := []ConstDef{
 		ConstDef{
-			name: "Hello",
+			Name:  "Hello",
+			Value: "123",
+			Type:  token.INT,
 		},
 		ConstDef{
-			name: "World",
+			Name:  "World",
+			Value: "456",
+			Type:  token.INT,
 		},
 	}
 
@@ -45,10 +50,14 @@ func TestExtractConstsReader(t *testing.T) {
 
 	expected := []ConstDef{
 		ConstDef{
-			name: "Shalom",
+			Name:  "Shalom",
+			Value: "123",
+			Type:  token.INT,
 		},
 		ConstDef{
-			name: "Olam",
+			Name:  "Olam",
+			Value: "456",
+			Type:  token.INT,
 		},
 	}
 

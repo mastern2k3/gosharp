@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"go/token"
+	"io"
 	"os"
 	"path"
 	"text/template"
@@ -14,17 +16,34 @@ import (
 var (
 	input  = flag.String("i", "", "the input go file to parse")
 	output = flag.String("o", "", "the output csharp file to generate")
+
+	classname = flag.String("classname", "Constants", "the output csharp file to generate")
 )
 
-var (
-	csharpTemplate = template.Must(template.New("").Parse(`
+var csharpTemplate = template.Must(template.New("").
+	Funcs(template.FuncMap{
+		"typeOf": typeOf,
+	}).Parse(`
 {{- /**/ -}}
-static class Constants {
-{{range .}}    public const int {{.Name}} = 3000;
+static class {{.ClassName}} {
+{{range .Defs}}    public const {{typeOf .}} {{.Name}} = {{.Value}};
 {{end -}}
 }
 `))
-)
+
+type templateData struct {
+	ClassName string
+	Defs      []gosharp.ConstDef
+}
+
+func typeOf(def gosharp.ConstDef) (string, error) {
+	switch def.Type {
+	case token.INT:
+		return "int", nil
+	default:
+		return "", fmt.Errorf("could not determine type of definition %+v", def)
+	}
+}
 
 func main() {
 
@@ -53,7 +72,27 @@ func main() {
 		panic(fmt.Sprintf("error while parsing file, make sure it compiles before generating: %s", err))
 	}
 
-	if err := csharpTemplate.Execute(os.Stdout, defs); err != nil {
+	var writer io.Writer
+
+	if *output == "" {
+		writer = os.Stdout
+	} else {
+		f, err := os.Create(*output)
+		if err != nil {
+			panic(fmt.Sprintf("error while creating output file: %s", err))
+		}
+
+		defer f.Close()
+
+		writer = f
+	}
+
+	data := templateData{
+		Defs:      defs,
+		ClassName: *classname,
+	}
+
+	if err := csharpTemplate.Execute(writer, data); err != nil {
 		panic(fmt.Sprintf("error while producing output: %s", err))
 	}
 }

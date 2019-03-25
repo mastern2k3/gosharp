@@ -34,7 +34,9 @@ func ExtractConsts(src interface{}, filename string) ([]ConstDef, error) {
 }
 
 type ConstDef struct {
-	Name string
+	Name  string
+	Value string
+	Type  token.Token
 }
 
 type constLocator struct {
@@ -100,7 +102,9 @@ func (v *valueCapture) Visit(n ast.Node) ast.Visitor {
 	} else if lit, is := n.(*ast.BasicLit); is {
 		v.value = lit.Value
 		ext := append(*v.extractions, ConstDef{
-			Name: v.name,
+			Name:  v.name,
+			Value: v.value,
+			Type:  lit.Kind,
 		})
 		*v.extractions = ext
 	}
